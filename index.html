@@ -47,7 +47,7 @@
   button:active {
     background-color: #25692a;
   }
-  #result {
+  #resultNames, #resultFingers {
     margin-top: 30px;
     font-size: 22px;
     font-weight: bold;
@@ -67,16 +67,54 @@
     border-radius: 12px;
     background: #fff;
   }
+  /* Pallino dito */
   .dot {
     position: absolute;
     width: 40px;
     height: 40px;
-    background: #4caf50;
     border-radius: 50%;
-    opacity: 0.75;
+    opacity: 0.85;
     pointer-events: none;
-    transition: transform 0.2s ease;
+    box-sizing: border-box;
+    transition: background-color 0.4s ease, opacity 0.4s ease;
   }
+  /* Colori ciclici */
+  .color0 { background-color: #e53935; }  /* rosso */
+  .color1 { background-color: #8e24aa; }  /* viola */
+  .color2 { background-color: #3949ab; }  /* blu */
+  .color3 { background-color: #00897b; }  /* verde acqua */
+  .color4 { background-color: #fdd835; }  /* giallo */
+  .color5 { background-color: #fb8c00; }  /* arancione */
+  .color6 { background-color: #6d4c41; }  /* marrone */
+
+  /* Pallini spenti */
+  .inactive {
+    background-color: #bbb !important;
+    opacity: 0.4 !important;
+  }
+
+  /* Cerchio di caricamento intorno al pallino */
+  .progress-circle {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 52px;
+    height: 52px;
+    pointer-events: none;
+  }
+  svg {
+    transform: rotate(-90deg);
+  }
+  circle {
+    fill: none;
+    stroke: #2a7d32;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 164.9;
+    stroke-dashoffset: 164.9;
+    transition: stroke-dashoffset 0.1s linear;
+  }
+
   /* Bottom menu */
   #menu {
     position: fixed;
@@ -116,20 +154,19 @@
 <h1>Decide for Us</h1>
 <div id="content">
   <!-- NAMES MODE -->
-  <div id="namesMode">
+  <div id="namesMode" style="display:none;">
     <p>Inserisci i nomi separati da virgole:</p>
     <input type="text" id="namesInput" placeholder="Esempio: Goku, Baddie" />
     <br />
     <button id="pickNameBtn">Scegli!</button>
-    <div id="resultNames" class="result"></div>
+    <div id="resultNames"></div>
   </div>
 
   <!-- FINGERS MODE -->
-  <div id="fingersMode" style="display:none;">
-    <p>Appoggia più dita nell’area sottostante, poi premi "Scegli dito!"</p>
+  <div id="fingersMode">
+    <p>Appoggia più dita nell’area sottostante, la scelta partirà automaticamente dopo 5 secondi di inattività.</p>
     <div id="areaTouch"></div>
-    <button id="pickFingerBtn">Scegli dito!</button>
-    <div id="resultFingers" class="result"></div>
+    <div id="resultFingers"></div>
   </div>
 </div>
 
@@ -153,7 +190,6 @@
   const resultNames = document.getElementById('resultNames');
   const resultFingers = document.getElementById('resultFingers');
   const pickNameBtn = document.getElementById('pickNameBtn');
-  const pickFingerBtn = document.getElementById('pickFingerBtn');
   const areaTouch = document.getElementById('areaTouch');
 
   // Active mode tracker
@@ -161,6 +197,14 @@
 
   // For touch tracking in Fingers mode
   const activeTouches = new Map();
+
+  // Timer e stato selezione
+  let selectionTimer = null;
+  const SELECTION_TIME_MS = 5000;
+  let selectionDone = false;
+
+  // Colori ciclici per dita
+  const colors = ['color0', 'color1', 'color2', 'color3', 'color4', 'color5', 'color6'];
 
   // Toggle modes
   function setActiveMode(mode) {
@@ -172,6 +216,9 @@
       menuNames.classList.remove('active');
       resultNames.textContent = '';
       resultFingers.textContent = '';
+      clearTouchDots();
+      selectionDone = false;
+      resetAllProgressCircles();
     } else {
       fingersMode.style.display = 'none';
       namesMode.style.display = 'block';
@@ -179,29 +226,47 @@
       menuNames.classList.add('active');
       resultNames.textContent = '';
       resultFingers.textContent = '';
-      activeTouches.clear();
       clearTouchDots();
+      clearTimer();
+      selectionDone = false;
+      resetAllProgressCircles();
     }
   }
 
   menuFingers.addEventListener('click', () => setActiveMode('fingers'));
   menuNames.addEventListener('click', () => setActiveMode('names'));
 
-  // Fingers mode touch events
+  // Gestione touch area per dita
   areaTouch.addEventListener('touchstart', (e) => {
+    if (activeMode !== 'fingers') return;
+    if(selectionDone) {
+      // se la selezione è finita, ricomincia da capo
+      clearTouchDots();
+      selectionDone = false;
+      resetAllProgressCircles();
+    }
     for (const touch of e.changedTouches) {
+      // Aggiungi pallino colorato
       const dot = document.createElement('div');
       dot.classList.add('dot');
+      const colorClass = colors[activeTouches.size % colors.length];
+      dot.classList.add(colorClass);
       dot.style.left = (touch.pageX - 20) + 'px';
       dot.style.top = (touch.pageY - 20) + 'px';
+
+      // Crea svg progress circle
+      const progressCircle = createProgressCircle();
+      dot.appendChild(progressCircle);
+
       document.body.appendChild(dot);
-      activeTouches.set(touch.identifier, {x: touch.pageX, y: touch.pageY, element: dot});
+      activeTouches.set(touch.identifier, {x: touch.pageX, y: touch.pageY, element: dot, colorClass, progressCircle});
     }
-    updateFingersCount();
+    resetTimer();
     e.preventDefault();
   }, {passive:false});
 
   areaTouch.addEventListener('touchmove', (e) => {
+    if (activeMode !== 'fingers') return;
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
@@ -211,10 +276,12 @@
         data.element.style.top = (touch.pageY - 20) + 'px';
       }
     }
+    resetTimer();
     e.preventDefault();
   }, {passive:false});
 
   areaTouch.addEventListener('touchend', (e) => {
+    if (activeMode !== 'fingers') return;
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
@@ -222,11 +289,12 @@
         activeTouches.delete(touch.identifier);
       }
     }
-    updateFingersCount();
+    resetTimer();
     e.preventDefault();
   }, {passive:false});
 
   areaTouch.addEventListener('touchcancel', (e) => {
+    if (activeMode !== 'fingers') return;
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
@@ -234,35 +302,144 @@
         activeTouches.delete(touch.identifier);
       }
     }
-    updateFingersCount();
+    resetTimer();
     e.preventDefault();
   }, {passive:false});
 
-  function updateFingersCount() {
-    resultFingers.textContent = `Dita poggiate: ${activeTouches.size}`;
+  // Timer reset e start
+  function resetTimer() {
+    clearTimer();
+    if (activeTouches.size === 0) {
+      resultFingers.textContent = 'Appoggia almeno un dito.';
+      return;
+    }
+    resultFingers.textContent = `Dita poggiate: ${activeTouches.size}. Scelta tra 5 secondi...`;
+    startProgressAnimation();
+    selectionTimer = setTimeout(() => {
+      scegliDito();
+    }, SELECTION_TIME_MS);
   }
 
+  function clearTimer() {
+    if (selectionTimer) {
+      clearTimeout(selectionTimer);
+      selectionTimer = null;
+    }
+  }
+
+  // Scegli il dito casuale, mostra risultato e colora i pallini
+  function scegliDito() {
+    if (activeTouches.size === 0) {
+      resultFingers.textContent = 'Nessun dito poggiato!';
+      selectionDone = false;
+      resetAllProgressCircles();
+      return;
+    }
+    selectionDone = true;
+    clearTimer();
+
+    // Scegli dito casuale
+    const touchesArray = Array.from(activeTouches.keys());
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    const idx = array[0] % touchesArray.length;
+    const chosenId = touchesArray[idx];
+
+    // Colora i pallini: solo il scelto resta colorato, gli altri spenti
+    activeTouches.forEach(({element, colorClass}, id) => {
+      if (id === chosenId) {
+        element.classList.remove('inactive');
+        element.style.opacity = '1';
+        animateProgressCircle(activeTouches.get(id).progressCircle, SELECTION_TIME_MS, true);
+      } else {
+        element.classList.add('inactive');
+        element.style.opacity = '0.4';
+        resetProgressCircle(activeTouches.get(id).progressCircle);
+      }
+    });
+
+    const pos = activeTouches.get(chosenId);
+    resultFingers.textContent = `Dito scelto: ID ${chosenId + 1} (X:${pos.x.toFixed(0)}, Y:${pos.y.toFixed(0)})`;
+  }
+
+  // Crea SVG per il cerchio di progresso
+  function createProgressCircle() {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "progress-circle");
+    svg.setAttribute("width", "52");
+    svg.setAttribute("height", "52");
+    const circleBg = document.createElementNS(ns, "circle");
+    circleBg.setAttribute("r", "26");
+    circleBg.setAttribute("cx", "26");
+    circleBg.setAttribute("cy", "26");
+    circleBg.setAttribute("stroke", "#ddd");
+    circleBg.setAttribute("stroke-width", "4");
+    circleBg.setAttribute("fill", "none");
+    svg.appendChild(circleBg);
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("r", "26");
+    circle.setAttribute("cx", "26");
+    circle.setAttribute("cy", "26");
+    circle.setAttribute("stroke-width", "4");
+    circle.setAttribute("fill", "none");
+    circle.setAttribute("stroke-linecap", "round");
+    circle.setAttribute("stroke-dasharray", "164.9");
+    circle.setAttribute("stroke-dashoffset", "164.9");
+    circle.setAttribute("stroke", "#2a7d32");
+    svg.appendChild(circle);
+    return svg;
+  }
+
+  // Anima il progresso del cerchio
+  function animateProgressCircle(svg, duration, finish = false) {
+    if (!svg) return;
+    const circle = svg.querySelectorAll('circle')[1];
+    if (!circle) return;
+
+    let start = null;
+    if (finish) {
+      circle.style.transition = 'stroke-dashoffset 0.5s ease-out';
+      circle.style.strokeDashoffset = '0';
+      return;
+    }
+
+    circle.style.transition = 'none';
+    circle.style.strokeDashoffset = '164.9';
+
+    function step(timestamp) {
+      if (!start) start = timestamp;
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      circle.style.strokeDashoffset = (164.9 * (1 - progress)).toFixed(1);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Reset animazione cerchi di tutti i pallini
+  function resetAllProgressCircles() {
+    activeTouches.forEach(({progressCircle}) => {
+      resetProgressCircle(progressCircle);
+    });
+  }
+  function resetProgressCircle(svg) {
+    if (!svg) return;
+    const circle = svg.querySelectorAll('circle')[1];
+    if (!circle) return;
+    circle.style.transition = 'none';
+    circle.style.strokeDashoffset = '164.9';
+  }
+
+  // Pulisce i pallini e resetta dati
   function clearTouchDots() {
     activeTouches.forEach(({element}) => {
       if (element.parentNode) element.parentNode.removeChild(element);
     });
     activeTouches.clear();
   }
-
-  // Fingers mode: pick a random finger
-  pickFingerBtn.addEventListener('click', () => {
-    if (activeTouches.size === 0) {
-      resultFingers.textContent = 'Nessun dito poggiato!';
-      return;
-    }
-    const touchesArray = Array.from(activeTouches.keys());
-    const array = new Uint32Array(1);
-    window.crypto.getRandomValues(array);
-    const idx = array[0] % touchesArray.length;
-    const chosenId = touchesArray[idx];
-    const pos = activeTouches.get(chosenId);
-    resultFingers.textContent = `Dito scelto: ID ${chosenId + 1} (X:${pos.x.toFixed(0)}, Y:${pos.y.toFixed(0)})`;
-  });
 
   // Names mode: pick a random name
   pickNameBtn.addEventListener('click', () => {
@@ -278,7 +455,7 @@
     resultNames.textContent = `👉 Scelto: ${nomi[index]}`;
   });
 
-  // Set default mode to fingers on load
+  // Imposta modalità di default
   setActiveMode('fingers');
 </script>
 </body>
