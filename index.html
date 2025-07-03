@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Decide for Us</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: sans-serif;
@@ -12,12 +12,12 @@
     }
     #areaTouch {
       width: 100vw;
-      height: 70vh; /* meno alto per lasciare spazio */
-      max-height: 500px; /* o quello che preferisci */
-      margin: 10px auto 0 auto; /* margine sopra e centrato orizzontalmente */
+      height: 70vh;
+      max-height: 500px;
+      margin: 10px auto 0 auto;
       background: #f0f0f0;
       position: relative;
-      border: 2px solid #666; /* per vedere i bordi */
+      border: 2px solid #666;
       border-radius: 10px;
     }
     .dot {
@@ -100,13 +100,13 @@
 </div>
 
 <div id="namesArea">
-  <input type="text" id="namesInput" placeholder="Inserisci nomi separati da virgola">
+  <input type="text" id="namesInput" placeholder="Inserisci nomi separati da virgola" />
   <button id="pickNameBtn">Scegli un nome</button>
   <div id="resultNames"></div>
 </div>
 
 <div id="menu">
-  <div id="modeFingers">☝️ Fingers</div>
+  <div id="modeFingers" class="active">☝️ Fingers</div>
   <div id="modeNames">🔠 Names</div>
 </div>
 
@@ -135,13 +135,13 @@
     if (mode === 'fingers') {
       fingersArea.style.display = 'block';
       namesArea.style.display = 'none';
-      areaTouch.style.display = 'block';  // <-- mostra areaTouch
+      areaTouch.style.display = 'block';
       modeFingers.classList.add('active');
       modeNames.classList.remove('active');
     } else {
       fingersArea.style.display = 'none';
       namesArea.style.display = 'block';
-      areaTouch.style.display = 'none';   // <-- nascondi areaTouch
+      areaTouch.style.display = 'none';
       modeFingers.classList.remove('active');
       modeNames.classList.add('active');
     }
@@ -212,7 +212,7 @@
 
   function clearTouchDots() {
     activeTouches.forEach(({element}) => {
-      if (document.body.contains(element)) document.body.removeChild(element);
+      if (areaTouch.contains(element)) areaTouch.removeChild(element);
     });
     activeTouches.clear();
   }
@@ -227,6 +227,8 @@
     activeTouches.forEach((data, id) => {
       if (id !== winner) {
         data.element.style.opacity = '0.3';
+      } else {
+        data.element.style.opacity = '1';
       }
     });
     resultFingers.textContent = 'Dito scelto!';
@@ -301,7 +303,7 @@
         } else {
           const data = activeTouches.get(touch.identifier);
           if (data) {
-            document.body.removeChild(data.element);
+            areaTouch.removeChild(data.element);
             activeTouches.delete(touch.identifier);
           }
         }
@@ -320,7 +322,7 @@
       previousTouchCount = currentTouchCount;
 
       e.preventDefault();
-    }, {passive:false});
+    }, { passive: false });
   });
 
   areaTouch.addEventListener('touchmove', (e) => {
@@ -335,7 +337,7 @@
       }
     }
     e.preventDefault();
-  }, {passive:false});
+  }, { passive: false });
 
   pickNameBtn.addEventListener('click', () => {
     if (activeMode !== 'names') return;
