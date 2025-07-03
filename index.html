@@ -327,13 +327,23 @@
 
   areaTouch.addEventListener('touchmove', (e) => {
     if (activeMode !== 'fingers') return;
+    const rect = areaTouch.getBoundingClientRect();
+    
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
-        data.x = touch.pageX;
-        data.y = touch.pageY;
-        data.element.style.left = (touch.pageX - 35) + 'px';
-        data.element.style.top = (touch.pageY - 35) + 'px';
+        // Calcolo posizioni limitate
+        let x = touch.pageX;
+        let y = touch.pageY;
+        
+        // Limita X all'interno dell'areaTouch
+        x = Math.max(rect.left + 35, Math.min(x, rect.right - 35));
+        // Limita Y all'interno dell'areaTouch
+        y = Math.max(rect.top + 35, Math.min(y, rect.bottom - 35));
+        data.x = x;
+        data.y = y;
+        data.element.style.left = (x - 35) + 'px';
+        data.element.style.top = (y - 35) + 'px';
       }
     }
     e.preventDefault();
