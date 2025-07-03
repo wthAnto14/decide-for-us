@@ -3,23 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <title>Decide for Us</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
+      background-color: #000;
+      color: white;
       overflow: hidden;
+      user-select: none;
     }
+
+    #header {
+      text-align: center;
+      font-size: 2.8rem;
+      font-weight: 900;
+      padding: 20px 0 10px 0;
+      background: linear-gradient(90deg,
+        #FF0000,
+        #FF7F00,
+        #FFFF00,
+        #00FF00,
+        #0000FF,
+        #4B0082,
+        #8B00FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+      letter-spacing: 2px;
+      user-select: none;
+    }
+
     #areaTouch {
       width: 100vw;
-      height: 70vh;
+      height: 65vh;
       max-height: 500px;
-      margin: 10px auto 0 auto;
-      background: #f0f0f0;
+      margin: 0 auto;
+      background: #111;
       position: relative;
-      border: 2px solid #666;
       border-radius: 10px;
+      box-shadow: 0 0 15px 3px rgba(255 255 255 / 0.1);
+      touch-action: none;
     }
+
     .dot {
       width: 70px;
       height: 70px;
@@ -28,69 +55,123 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
+      transition: opacity 0.4s ease;
+      animation: glowPulse 2.5s infinite alternate;
+      user-select: none;
+      cursor: default;
     }
-    .dot.red    { background: #ff4d4d; }
-    .dot.blue   { background: #4d79ff; }
-    .dot.green  { background: #4dff88; }
-    .dot.orange { background: #ffaa00; }
-    .dot.purple { background: #cc66ff; }
-    .dot.cyan   { background: #00e6e6; }
-    .dot.yellow { background: #ffff66; }
+    .dot.red    { background: #FF0000; box-shadow: 0 0 15px #FF0000; }
+    .dot.orange { background: #FF7F00; box-shadow: 0 0 15px #FF7F00; }
+    .dot.yellow { background: #FFFF00; box-shadow: 0 0 15px #FFFF00; }
+    .dot.green  { background: #00FF00; box-shadow: 0 0 15px #00FF00; }
+    .dot.blue   { background: #0000FF; box-shadow: 0 0 15px #0000FF; }
+    .dot.indigo { background: #4B0082; box-shadow: 0 0 15px #4B0082; }
+    .dot.purple { background: #8B00FF; box-shadow: 0 0 15px #8B00FF; }
+
+    @keyframes glowPulse {
+      0% {
+        box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
+      }
+      100% {
+        box-shadow: 0 0 25px 8px rgba(255 255 255 / 0.7);
+      }
+    }
 
     .dot svg {
-      position: absolute;
       width: 80px;
       height: 80px;
+      position: absolute;
       transform: rotate(-90deg);
     }
-    .dot svg circle {
-      fill: none;
+
+    .dot svg circle.bg {
+      stroke: #444;
       stroke-width: 6;
     }
-    .dot svg circle.bg {
-      stroke: #ccc;
-    }
+
     .dot svg circle.fg {
-      stroke: #333;
+      stroke-width: 6;
+      stroke-linecap: round;
       stroke-dasharray: 164.9;
       stroke-dashoffset: 164.9;
+      stroke: white;
+      transition: stroke-dashoffset 0.3s linear;
     }
 
     #menu {
-      height: 80px;
+      height: 70px;
       background: #222;
       color: white;
       display: flex;
       justify-content: space-around;
       align-items: center;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 700;
+      user-select: none;
     }
+
     #menu div {
       cursor: pointer;
-      padding: 10px;
-      border-radius: 10px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      user-select: none;
+      transition: background-color 0.3s ease;
     }
+
     #menu .active {
-      background: #555;
+      background-color: #555;
     }
 
     #namesInput, #pickNameBtn {
       margin: 10px;
-      padding: 10px;
-      font-size: 16px;
-    }
-    #namesArea, #fingersArea {
-      display: none;
-      padding: 10px;
-      background: #fff;
-    }
-    #countdown {
+      padding: 12px;
       font-size: 18px;
-      margin-top: 5px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      box-shadow: 0 0 10px rgba(255 255 255 / 0.2);
+      user-select: none;
+    }
+
+    #namesInput {
+      width: 70%;
+      max-width: 400px;
+      color: #000;
+    }
+
+    #pickNameBtn {
+      background-color: #444;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #pickNameBtn:hover {
+      background-color: #666;
+    }
+
+    #fingersArea, #namesArea {
+      padding: 15px;
+      background: #111;
+      border-radius: 8px;
+      margin: 15px auto;
+      max-width: 600px;
+      text-align: center;
+      user-select: none;
+    }
+
+    #countdown {
+      font-size: 20px;
+      margin-top: 10px;
+      font-weight: 600;
+      color: white;
     }
   </style>
 </head>
 <body>
+
+<div id="header">Decide For Us</div>
 
 <div id="areaTouch"></div>
 
@@ -106,7 +187,7 @@
 </div>
 
 <div id="menu">
-  <div id="modeFingers" class="active">☝️ Fingers</div>
+  <div id="modeFingers">☝️ Fingers</div>
   <div id="modeNames">🔠 Names</div>
 </div>
 
@@ -122,7 +203,7 @@
   const namesArea = document.getElementById('namesArea');
 
   const SELECTION_TIME_MS = 5000;
-  const colors = ['red', 'blue', 'green', 'orange', 'purple', 'cyan', 'yellow'];
+  const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'purple'];
   let activeTouches = new Map();
   let selectionTimer = null;
   let countdownInterval = null;
@@ -227,6 +308,7 @@
     activeTouches.forEach((data, id) => {
       if (id !== winner) {
         data.element.style.opacity = '0.3';
+        data.element.style.animation = 'none';
       } else {
         data.element.style.opacity = '1';
       }
@@ -328,18 +410,16 @@
   areaTouch.addEventListener('touchmove', (e) => {
     if (activeMode !== 'fingers') return;
     const rect = areaTouch.getBoundingClientRect();
-    
+
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
-        // Calcolo posizioni limitate
         let x = touch.pageX;
         let y = touch.pageY;
-        
-        // Limita X all'interno dell'areaTouch
+
         x = Math.max(rect.left + 35, Math.min(x, rect.right - 35));
-        // Limita Y all'interno dell'areaTouch
         y = Math.max(rect.top + 35, Math.min(y, rect.bottom - 35));
+
         data.x = x;
         data.y = y;
         data.element.style.left = (x - 35) + 'px';
