@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Decide for Us</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -12,6 +12,7 @@
       color: white;
       overflow: hidden;
       user-select: none;
+      -webkit-user-select: none; /* Per compatibilità Safari */
     }
 
     #header {
@@ -28,11 +29,9 @@
         #4B0082,
         #8B00FF);
       -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-fill-color: transparent;
+      color: transparent;
       letter-spacing: 2px;
-      user-select: none;
     }
 
     #areaTouch {
@@ -44,10 +43,11 @@
       position: relative;
       border-radius: 10px;
       box-shadow: 0 0 15px 3px rgba(255 255 255 / 0.1);
-      touch-action: none;
+      touch-action: none; /* Fondamentale per gestire i touch events */
     }
 
     .dot {
+      /* Le dimensioni sono definite qui e riprese nel JS tramite una costante */
       width: 70px;
       height: 70px;
       border-radius: 50%;
@@ -56,10 +56,11 @@
       justify-content: center;
       align-items: center;
       box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
-      transition: opacity 0.4s ease;
+      transition: opacity 0.4s ease, transform 0.3s ease;
       animation: glowPulse 2.5s infinite alternate;
-      user-select: none;
       cursor: default;
+      /* La trasformazione viene usata per centrare il dot sul punto del tocco */
+      transform: translate(-50%, -50%);
     }
     .dot.red    { background: #FF0000; box-shadow: 0 0 15px #FF0000; }
     .dot.orange { background: #FF7F00; box-shadow: 0 0 15px #FF7F00; }
@@ -70,10 +71,10 @@
     .dot.purple { background: #8B00FF; box-shadow: 0 0 15px #8B00FF; }
 
     @keyframes glowPulse {
-      0% {
+      from {
         box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
       }
-      100% {
+      to {
         box-shadow: 0 0 25px 8px rgba(255 255 255 / 0.7);
       }
     }
@@ -88,15 +89,14 @@
     .dot svg circle.bg {
       stroke: #444;
       stroke-width: 6;
+      fill: transparent;
     }
 
     .dot svg circle.fg {
       stroke-width: 6;
       stroke-linecap: round;
-      stroke-dasharray: 164.9;
-      stroke-dashoffset: 164.9;
       stroke: white;
-      transition: stroke-dashoffset 0.3s linear;
+      fill: transparent;
     }
 
     #menu {
@@ -108,14 +108,12 @@
       align-items: center;
       font-size: 20px;
       font-weight: 700;
-      user-select: none;
     }
 
     #menu div {
       cursor: pointer;
       padding: 12px 20px;
       border-radius: 12px;
-      user-select: none;
       transition: background-color 0.3s ease;
     }
 
@@ -131,7 +129,6 @@
       border: none;
       outline: none;
       box-shadow: 0 0 10px rgba(255 255 255 / 0.2);
-      user-select: none;
     }
 
     #namesInput {
@@ -144,7 +141,6 @@
       background-color: #444;
       color: white;
       cursor: pointer;
-      user-select: none;
     }
 
     #pickNameBtn:hover {
@@ -158,7 +154,6 @@
       margin: 15px auto;
       max-width: 600px;
       text-align: center;
-      user-select: none;
     }
 
     #countdown {
@@ -180,18 +175,19 @@
   <div id="countdown"></div>
 </div>
 
-<div id="namesArea">
+<div id="namesArea" style="display: none;">
   <input type="text" id="namesInput" placeholder="Inserisci nomi separati da virgola" />
   <button id="pickNameBtn">Scegli un nome</button>
   <div id="resultNames"></div>
 </div>
 
 <div id="menu">
-  <div id="modeFingers">☝️ Fingers</div>
+  <div id="modeFingers" class="active">☝️ Fingers</div>
   <div id="modeNames">🔠 Names</div>
 </div>
 
 <script>
+  // --- ELEMENTI DEL DOM ---
   const areaTouch = document.getElementById('areaTouch');
   const resultFingers = document.getElementById('resultFingers');
   const countdownEl = document.getElementById('countdown');
@@ -201,15 +197,23 @@
   const modeNames = document.getElementById('modeNames');
   const fingersArea = document.getElementById('fingersArea');
   const namesArea = document.getElementById('namesArea');
+  const namesInput = document.getElementById('namesInput');
 
-  const SELECTION_TIME_MS = 5000;
-  const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'purple'];
+  // --- COSTANTI DI CONFIGURAZIONE ---
+  const SELECTION_TIME_MS = 3000;
+  const DOT_SIZE = 70;
+  const CIRCLE_RADIUS = 26.25;
+  const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
+  const COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'purple'];
+
+  // --- STATO DELL'APPLICAZIONE ---
   let activeTouches = new Map();
   let selectionTimer = null;
   let countdownInterval = null;
   let selectionDone = false;
   let activeMode = 'fingers';
   let previousTouchCount = 0;
+
 
   function setActiveMode(mode) {
     activeMode = mode;
@@ -219,6 +223,7 @@
       areaTouch.style.display = 'block';
       modeFingers.classList.add('active');
       modeNames.classList.remove('active');
+      resetFingersGame();
     } else {
       fingersArea.style.display = 'none';
       namesArea.style.display = 'block';
@@ -227,9 +232,6 @@
       modeNames.classList.add('active');
     }
   }
-
-  modeFingers.addEventListener('click', () => setActiveMode('fingers'));
-  modeNames.addEventListener('click', () => setActiveMode('names'));
 
   function clearTimer() {
     clearTimeout(selectionTimer);
@@ -250,20 +252,28 @@
     [bg, fg].forEach(c => {
       c.setAttribute("cx", "40");
       c.setAttribute("cy", "40");
-      c.setAttribute("r", "26.25");
+      c.setAttribute("r", CIRCLE_RADIUS);
     });
+    
+    fg.style.strokeDasharray = CIRCLE_CIRCUMFERENCE;
+    fg.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
 
     svg.appendChild(bg);
     svg.appendChild(fg);
     return svg;
   }
 
+  // --- FUNZIONI DI ANIMAZIONE (RIPRISTINATE) ---
+  // FIX: Ripristinata la logica originale con requestAnimationFrame che è più affidabile.
   function startProgressAnimation() {
     const duration = SELECTION_TIME_MS;
     const start = performance.now();
 
-    activeTouches.forEach(({progressCircle}) => {
-      animateProgress(progressCircle.querySelectorAll('circle')[1], duration, start);
+    activeTouches.forEach(({ progressCircle }) => {
+        if (progressCircle) {
+            const circle = progressCircle.querySelector('.fg');
+            animateProgress(circle, duration, start);
+        }
     });
   }
 
@@ -271,64 +281,73 @@
     function step(timestamp) {
       const elapsed = timestamp - start;
       const progress = Math.min(elapsed / duration, 1);
-      circle.style.strokeDashoffset = 164.9 * (1 - progress);
-      if (elapsed < duration) requestAnimationFrame(step);
+      // Usa la costante CIRCLE_CIRCUMFERENCE per il calcolo
+      circle.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - progress);
+      if (elapsed < duration) {
+        requestAnimationFrame(step);
+      }
     }
     requestAnimationFrame(step);
   }
+  // --- FINE FUNZIONI DI ANIMAZIONE ---
+
 
   function resetProgressCircle(svg) {
     if (!svg) return;
-    const circle = svg.querySelectorAll('circle')[1];
+    const circle = svg.querySelector('.fg');
     if (!circle) return;
-    circle.style.transition = 'stroke-dashoffset 0.3s ease';
-    circle.style.strokeDashoffset = '164.9';
+    // Rimuove la transizione per un reset istantaneo
+    circle.style.transition = 'none';
+    circle.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
   }
 
   function resetAllProgressCircles() {
-    activeTouches.forEach(({progressCircle}) => {
+    activeTouches.forEach(({ progressCircle }) => {
       resetProgressCircle(progressCircle);
     });
   }
-
-  function clearTouchDots() {
-    activeTouches.forEach(({element}) => {
-      if (areaTouch.contains(element)) areaTouch.removeChild(element);
-    });
-    activeTouches.clear();
+  
+  function resetFingersGame() {
+      clearTimer();
+      // Svuota l'area touch in modo sicuro
+      while (areaTouch.firstChild) {
+        areaTouch.removeChild(areaTouch.firstChild);
+      }
+      activeTouches.clear();
+      resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
+      countdownEl.textContent = '';
+      selectionDone = false;
+      previousTouchCount = 0;
   }
 
-  function scegliDito() {
+  function selectFinger() {
     if (activeTouches.size < 2) return;
+    selectionDone = true;
+
     const keys = Array.from(activeTouches.keys());
     const array = new Uint32Array(1);
     window.crypto.getRandomValues(array);
-    const idx = array[0] % keys.length;
-    const winner = keys[idx];
+    const winnerIndex = array[0] % keys.length;
+    const winnerId = keys[winnerIndex];
+
     activeTouches.forEach((data, id) => {
-      if (id !== winner) {
+      if (id !== winnerId) {
         data.element.style.opacity = '0.3';
         data.element.style.animation = 'none';
       } else {
         data.element.style.opacity = '1';
+        data.element.style.transform = 'translate(-50%, -50%) scale(1.1)'; // Evidenzia il vincitore
       }
     });
     resultFingers.textContent = 'Dito scelto!';
-    selectionDone = true;
   }
 
-  function resetTimer() {
-    if (selectionTimer || countdownInterval) {
-      clearTimer();
-    }
-
-    if (activeTouches.size < 2) {
-      resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
-      countdownEl.textContent = '';
+  function startSelectionProcess() {
+    if (selectionTimer || activeTouches.size < 2) {
       return;
     }
 
-    resultFingers.textContent = `Dita poggiate: ${activeTouches.size}. Scelta tra 5 secondi...`;
+    resultFingers.textContent = `Dita poggiate: ${activeTouches.size}. Scelta tra ${SELECTION_TIME_MS / 1000} secondi...`;
     let secondsLeft = SELECTION_TIME_MS / 1000;
     countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
 
@@ -336,102 +355,108 @@
 
     countdownInterval = setInterval(() => {
       secondsLeft--;
-      countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
-      if (secondsLeft <= 0) {
-        clearInterval(countdownInterval);
-        countdownEl.textContent = '';
-        scegliDito();
-      }
+      countdownEl.textContent = `Tempo rimasto: ${secondsLeft > 0 ? secondsLeft : 0} s`;
     }, 1000);
 
     selectionTimer = setTimeout(() => {
       clearInterval(countdownInterval);
       countdownEl.textContent = '';
-      scegliDito();
+      selectFinger();
     }, SELECTION_TIME_MS);
   }
-
-  // Touch Events
-  ['touchstart', 'touchend', 'touchcancel'].forEach(eventType => {
-    areaTouch.addEventListener(eventType, (e) => {
+  
+  function handleTouchStart(e) {
       if (activeMode !== 'fingers') return;
+      e.preventDefault();
 
-      if (eventType === 'touchstart' && selectionDone) {
-        clearTouchDots();
-        resetAllProgressCircles();
-        selectionDone = false;
+      if (selectionDone) {
+        resetFingersGame();
       }
+      
+      const rect = areaTouch.getBoundingClientRect();
 
       for (const touch of e.changedTouches) {
-        if (eventType === 'touchstart') {
           const dot = document.createElement('div');
           dot.classList.add('dot');
-          const colorClass = colors[activeTouches.size % colors.length];
+          const colorClass = COLORS[activeTouches.size % COLORS.length];
           dot.classList.add(colorClass);
-          dot.style.left = (touch.pageX - 35) + 'px';
-          dot.style.top = (touch.pageY - 35) + 'px';
+          
+          const x = touch.clientX - rect.left;
+          const y = touch.clientY - rect.top;
+
+          dot.style.left = `${x}px`;
+          dot.style.top = `${y}px`;
 
           const progressCircle = createProgressCircle();
           dot.appendChild(progressCircle);
 
           areaTouch.appendChild(dot);
-          activeTouches.set(touch.identifier, {
-            x: touch.pageX,
-            y: touch.pageY,
-            element: dot,
-            colorClass,
-            progressCircle
-          });
-        } else {
-          const data = activeTouches.get(touch.identifier);
-          if (data) {
-            areaTouch.removeChild(data.element);
-            activeTouches.delete(touch.identifier);
-          }
-        }
+          activeTouches.set(touch.identifier, { element: dot, progressCircle });
       }
-
-      const currentTouchCount = activeTouches.size;
-      if (currentTouchCount >= 2) {
-        if (previousTouchCount !== currentTouchCount) {
-          resetTimer();
-        }
-      } else {
-        clearTimer();
-        resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
-        countdownEl.textContent = '';
-      }
-      previousTouchCount = currentTouchCount;
-
+      
+      updateTouchState();
+  }
+  
+  function handleTouchEnd(e) {
+      if (activeMode !== 'fingers') return;
       e.preventDefault();
-    }, { passive: false });
-  });
+      
+      for (const touch of e.changedTouches) {
+        const data = activeTouches.get(touch.identifier);
+        if (data) {
+          areaTouch.removeChild(data.element);
+          activeTouches.delete(touch.identifier);
+        }
+      }
+      
+      if (selectionDone) {
+          resetFingersGame();
+          return;
+      }
+      
+      updateTouchState();
+  }
 
-  areaTouch.addEventListener('touchmove', (e) => {
-    if (activeMode !== 'fingers') return;
+  function handleTouchMove(e) {
+    if (activeMode !== 'fingers' || selectionDone) return;
+    e.preventDefault();
+    
     const rect = areaTouch.getBoundingClientRect();
 
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
-        let x = touch.pageX;
-        let y = touch.pageY;
+        let x = touch.clientX - rect.left;
+        let y = touch.clientY - rect.top;
+        
+        const radius = DOT_SIZE / 2;
+        x = Math.max(radius, Math.min(x, rect.width - radius));
+        y = Math.max(radius, Math.min(y, rect.height - radius));
 
-        x = Math.max(rect.left + 35, Math.min(x, rect.right - 35));
-        y = Math.max(rect.top + 35, Math.min(y, rect.bottom - 35));
-
-        data.x = x;
-        data.y = y;
-        data.element.style.left = (x - 35) + 'px';
-        data.element.style.top = (y - 35) + 'px';
+        data.element.style.left = `${x}px`;
+        data.element.style.top = `${y}px`;
       }
     }
-    e.preventDefault();
-  }, { passive: false });
+  }
+  
+  function updateTouchState() {
+      const currentTouchCount = activeTouches.size;
+      
+      if (previousTouchCount !== currentTouchCount && !selectionDone) {
+          clearTimer();
+          if (currentTouchCount >= 2) {
+              startSelectionProcess();
+          } else {
+              resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
+              countdownEl.textContent = '';
+          }
+      }
+      previousTouchCount = currentTouchCount;
+  }
 
-  pickNameBtn.addEventListener('click', () => {
+  function pickName() {
     if (activeMode !== 'names') return;
-    const input = document.getElementById('namesInput').value.trim();
+    const input = namesInput.value.trim();
     if (!input) {
       resultNames.textContent = 'Inserisci almeno un nome.';
       return;
@@ -445,9 +470,21 @@
     window.crypto.getRandomValues(array);
     const idx = array[0] % names.length;
     resultNames.textContent = `Nome scelto: ${names[idx]}`;
-  });
+  }
 
+  // --- EVENT LISTENERS ---
+  areaTouch.addEventListener('touchstart', handleTouchStart, { passive: false });
+  areaTouch.addEventListener('touchend', handleTouchEnd, { passive: false });
+  areaTouch.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+  areaTouch.addEventListener('touchmove', handleTouchMove, { passive: false });
+  
+  pickNameBtn.addEventListener('click', pickName);
+  modeFingers.addEventListener('click', () => setActiveMode('fingers'));
+  modeNames.addEventListener('click', () => setActiveMode('names'));
+
+  // --- INIZIALIZZAZIONE ---
   setActiveMode('fingers');
+
 </script>
 
 </body>
