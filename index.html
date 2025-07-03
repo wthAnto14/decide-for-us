@@ -229,29 +229,35 @@
   menuNames.addEventListener('click', () => setActiveMode('names'));
 
   areaTouch.addEventListener('touchstart', (e) => {
-    if (activeMode !== 'fingers') return;
-    if(selectionDone) {
-      clearTouchDots();
-      selectionDone = false;
-      resetAllProgressCircles();
-    }
-    for (const touch of e.changedTouches) {
-      const dot = document.createElement('div');
-      dot.classList.add('dot');
-      const colorClass = colors[activeTouches.size % colors.length];
-      dot.classList.add(colorClass);
-      dot.style.left = (touch.pageX - 35) + 'px';
-      dot.style.top = (touch.pageY - 35) + 'px';
+  if (activeMode !== 'fingers') return;
+  if(selectionDone) {
+    clearTouchDots();
+    selectionDone = false;
+    resetAllProgressCircles();
+  }
+  for (const touch of e.changedTouches) {
+    const dot = document.createElement('div');
+    dot.classList.add('dot');
+    const colorClass = colors[activeTouches.size % colors.length];
+    dot.classList.add(colorClass);
+    dot.style.left = (touch.pageX - 35) + 'px';
+    dot.style.top = (touch.pageY - 35) + 'px';
 
-      const progressCircle = createProgressCircle();
-      dot.appendChild(progressCircle);
+    const progressCircle = createProgressCircle();
+    dot.appendChild(progressCircle);
 
-      document.body.appendChild(dot);
-      activeTouches.set(touch.identifier, {x: touch.pageX, y: touch.pageY, element: dot, colorClass, progressCircle});
-    }
+    document.body.appendChild(dot);
+    activeTouches.set(touch.identifier, {x: touch.pageX, y: touch.pageY, element: dot, colorClass, progressCircle});
+  }
+  if (activeTouches.size >= 2) {
     resetTimer();
-    e.preventDefault();
-  }, {passive:false});
+  } else {
+    clearTimer();
+    resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
+    countdownEl.textContent = '';
+  }
+  e.preventDefault();
+}, {passive:false});
 
   areaTouch.addEventListener('touchmove', (e) => {
     if (activeMode !== 'fingers') return;
@@ -269,61 +275,75 @@
   }, {passive:false});
 
   areaTouch.addEventListener('touchend', (e) => {
-    if (activeMode !== 'fingers') return;
-    for (const touch of e.changedTouches) {
-      const data = activeTouches.get(touch.identifier);
-      if (data) {
-        document.body.removeChild(data.element);
-        activeTouches.delete(touch.identifier);
-      }
+  if (activeMode !== 'fingers') return;
+  for (const touch of e.changedTouches) {
+    const data = activeTouches.get(touch.identifier);
+    if (data) {
+      document.body.removeChild(data.element);
+      activeTouches.delete(touch.identifier);
     }
+  }
+  if (activeTouches.size >= 2) {
     resetTimer();
-    e.preventDefault();
-  }, {passive:false});
+  } else {
+    clearTimer();
+    resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
+    countdownEl.textContent = '';
+  }
+  e.preventDefault();
+}, {passive:false});
 
-  areaTouch.addEventListener('touchcancel', (e) => {
-    if (activeMode !== 'fingers') return;
-    for (const touch of e.changedTouches) {
-      const data = activeTouches.get(touch.identifier);
-      if (data) {
-        document.body.removeChild(data.element);
-        activeTouches.delete(touch.identifier);
-      }
+areaTouch.addEventListener('touchcancel', (e) => {
+  if (activeMode !== 'fingers') return;
+  for (const touch of e.changedTouches) {
+    const data = activeTouches.get(touch.identifier);
+    if (data) {
+      document.body.removeChild(data.element);
+      activeTouches.delete(touch.identifier);
     }
+  }
+  if (activeTouches.size >= 2) {
     resetTimer();
-    e.preventDefault();
-  }, {passive:false});
+  } else {
+    clearTimer();
+    resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
+    countdownEl.textContent = '';
+  }
+  e.preventDefault();
+}, {passive:false});
 
   function resetTimer() {
-    clearTimer();
-    if (activeTouches.size === 0) {
-      resultFingers.textContent = 'Appoggia almeno un dito.';
-      countdownEl.textContent = '';
-      return;
-    }
-    resultFingers.textContent = `Dita poggiate: ${activeTouches.size}. Scelta tra 5 secondi...`;
-    let secondsLeft = SELECTION_TIME_MS / 1000;
-    countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
+  clearTimer();
 
-    startProgressAnimation();
+  if (activeTouches.size < 2) {
+    resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
+    countdownEl.textContent = '';
+    return;
+  }
 
-    countdownInterval = setInterval(() => {
-      secondsLeft--;
-      if (secondsLeft <= 0) {
-        clearInterval(countdownInterval);
-        countdownEl.textContent = '';
-        scegliDito();
-      } else {
-        countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
-      }
-    }, 1000);
+  resultFingers.textContent = `Dita poggiate: ${activeTouches.size}. Scelta tra 5 secondi...`;
+  let secondsLeft = SELECTION_TIME_MS / 1000;
+  countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
 
-    selectionTimer = setTimeout(() => {
+  startProgressAnimation();
+
+  countdownInterval = setInterval(() => {
+    secondsLeft--;
+    if (secondsLeft <= 0) {
       clearInterval(countdownInterval);
       countdownEl.textContent = '';
       scegliDito();
-    }, SELECTION_TIME_MS);
-  }
+    } else {
+      countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
+    }
+  }, 1000);
+
+  selectionTimer = setTimeout(() => {
+    clearInterval(countdownInterval);
+    countdownEl.textContent = '';
+    scegliDito();
+  }, SELECTION_TIME_MS);
+}
 
   function clearTimer() {
     if (selectionTimer) {
