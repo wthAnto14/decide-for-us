@@ -70,10 +70,10 @@
   /* Pallino dito */
   .dot {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
-    opacity: 0.85;
+    opacity: 0.9;
     pointer-events: none;
     box-sizing: border-box;
     transition: background-color 0.4s ease, opacity 0.4s ease;
@@ -96,10 +96,10 @@
   /* Cerchio di caricamento intorno al pallino */
   .progress-circle {
     position: absolute;
-    top: -6px;
-    left: -6px;
-    width: 52px;
-    height: 52px;
+    top: -10px;
+    left: -10px;
+    width: 84px;
+    height: 84px;
     pointer-events: none;
   }
   svg {
@@ -240,21 +240,18 @@
   areaTouch.addEventListener('touchstart', (e) => {
     if (activeMode !== 'fingers') return;
     if(selectionDone) {
-      // se la selezione è finita, ricomincia da capo
       clearTouchDots();
       selectionDone = false;
       resetAllProgressCircles();
     }
     for (const touch of e.changedTouches) {
-      // Aggiungi pallino colorato
       const dot = document.createElement('div');
       dot.classList.add('dot');
       const colorClass = colors[activeTouches.size % colors.length];
       dot.classList.add(colorClass);
-      dot.style.left = (touch.pageX - 20) + 'px';
-      dot.style.top = (touch.pageY - 20) + 'px';
+      dot.style.left = (touch.pageX - 35) + 'px';
+      dot.style.top = (touch.pageY - 35) + 'px';
 
-      // Crea svg progress circle
       const progressCircle = createProgressCircle();
       dot.appendChild(progressCircle);
 
@@ -272,11 +269,11 @@
       if (data) {
         data.x = touch.pageX;
         data.y = touch.pageY;
-        data.element.style.left = (touch.pageX - 20) + 'px';
-        data.element.style.top = (touch.pageY - 20) + 'px';
+        data.element.style.left = (touch.pageX - 35) + 'px';
+        data.element.style.top = (touch.pageY - 35) + 'px';
       }
     }
-    resetTimer();
+    // Non resettare il timer durante il movimento
     e.preventDefault();
   }, {passive:false});
 
@@ -338,23 +335,21 @@
     selectionDone = true;
     clearTimer();
 
-    // Scegli dito casuale
     const touchesArray = Array.from(activeTouches.keys());
     const array = new Uint32Array(1);
     window.crypto.getRandomValues(array);
     const idx = array[0] % touchesArray.length;
     const chosenId = touchesArray[idx];
 
-    // Colora i pallini: solo il scelto resta colorato, gli altri spenti
-    activeTouches.forEach(({element, colorClass}, id) => {
+    activeTouches.forEach(({element, colorClass, progressCircle}, id) => {
       if (id === chosenId) {
         element.classList.remove('inactive');
         element.style.opacity = '1';
-        animateProgressCircle(activeTouches.get(id).progressCircle, SELECTION_TIME_MS, true);
+        animateProgressCircle(progressCircle, SELECTION_TIME_MS, true);
       } else {
         element.classList.add('inactive');
         element.style.opacity = '0.4';
-        resetProgressCircle(activeTouches.get(id).progressCircle);
+        resetProgressCircle(progressCircle);
       }
     });
 
@@ -367,20 +362,20 @@
     const ns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("class", "progress-circle");
-    svg.setAttribute("width", "52");
-    svg.setAttribute("height", "52");
+    svg.setAttribute("width", "84");
+    svg.setAttribute("height", "84");
     const circleBg = document.createElementNS(ns, "circle");
     circleBg.setAttribute("r", "26");
-    circleBg.setAttribute("cx", "26");
-    circleBg.setAttribute("cy", "26");
+    circleBg.setAttribute("cx", "42");
+    circleBg.setAttribute("cy", "42");
     circleBg.setAttribute("stroke", "#ddd");
     circleBg.setAttribute("stroke-width", "4");
     circleBg.setAttribute("fill", "none");
     svg.appendChild(circleBg);
     const circle = document.createElementNS(ns, "circle");
     circle.setAttribute("r", "26");
-    circle.setAttribute("cx", "26");
-    circle.setAttribute("cy", "26");
+    circle.setAttribute("cx", "42");
+    circle.setAttribute("cy", "42");
     circle.setAttribute("stroke-width", "4");
     circle.setAttribute("fill", "none");
     circle.setAttribute("stroke-linecap", "round");
