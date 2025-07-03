@@ -1,54 +1,285 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>Scelta Casuale Vera</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 40px;
-      background-color: #f9f9f9;
-    }
-    input, button {
-      padding: 10px;
-      margin: 10px;
-      font-size: 16px;
-    }
-    #risultato {
-      font-size: 24px;
-      font-weight: bold;
-      margin-top: 30px;
-      color: #2a7;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Decide for Us</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    margin: 0;
+    padding-bottom: 70px; /* spazio per menu */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #fafafa;
+    color: #222;
+  }
+  h1 {
+    text-align: center;
+    margin-top: 20px;
+  }
+  #content {
+    flex-grow: 1;
+    padding: 20px;
+    text-align: center;
+  }
+  input[type="text"] {
+    width: 80%;
+    max-width: 300px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  button {
+    margin-top: 15px;
+    padding: 12px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    background-color: #2a7d32;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+  }
+  button:active {
+    background-color: #25692a;
+  }
+  #result {
+    margin-top: 30px;
+    font-size: 22px;
+    font-weight: bold;
+    min-height: 28px;
+    color: #2a7d32;
+  }
+  #areaTouch {
+    margin-top: 30px;
+    border: 2px dashed #888;
+    height: 300px;
+    touch-action: none;
+    user-select: none;
+    position: relative;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 12px;
+    background: #fff;
+  }
+  .dot {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #4caf50;
+    border-radius: 50%;
+    opacity: 0.75;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+  }
+  /* Bottom menu */
+  #menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: white;
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    user-select: none;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+  }
+  #menu div {
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: color 0.3s ease;
+  }
+  #menu div.active {
+    color: #2a7d32;
+    font-weight: bold;
+  }
+  #menu div span.icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+</style>
 </head>
 <body>
-  <h1>Scelta Casuale Vera</h1>
-  <p>Inserisci i nomi separati da virgole:</p>
-  <input type="text" id="nomi" placeholder="Esempio: Goku,Baddie" size="30">
-  <br>
-  <button onclick="scegliCaso()">Scegli!</button>
 
-  <div id="risultato"></div>
+<h1>Decide for Us</h1>
+<div id="content">
+  <!-- NAMES MODE -->
+  <div id="namesMode">
+    <p>Inserisci i nomi separati da virgole:</p>
+    <input type="text" id="namesInput" placeholder="Esempio: Goku, Baddie" />
+    <br />
+    <button id="pickNameBtn">Scegli!</button>
+    <div id="resultNames" class="result"></div>
+  </div>
 
-  <script>
-    function scegliCaso() {
-      const input = document.getElementById("nomi").value;
-      const nomi = input.split(",").map(n => n.trim()).filter(n => n.length > 0);
+  <!-- FINGERS MODE -->
+  <div id="fingersMode" style="display:none;">
+    <p>Appoggia più dita nell’area sottostante, poi premi "Scegli dito!"</p>
+    <div id="areaTouch"></div>
+    <button id="pickFingerBtn">Scegli dito!</button>
+    <div id="resultFingers" class="result"></div>
+  </div>
+</div>
 
-      if (nomi.length < 2) {
-        document.getElementById("risultato").innerText = "Inserisci almeno 2 nomi.";
-        return;
-      }
+<!-- Bottom menu -->
+<div id="menu">
+  <div id="menuFingers" class="active" title="Fingers">
+    <span class="icon">☝️</span>
+    <span>Fingers</span>
+  </div>
+  <div id="menuNames" title="Names">
+    <span class="icon">🔠</span>
+    <span>Names</span>
+  </div>
+</div>
 
-      // Generatore casuale sicuro
-      const array = new Uint32Array(1);
-      window.crypto.getRandomValues(array);
-      const index = array[0] % nomi.length;
+<script>
+  const menuFingers = document.getElementById('menuFingers');
+  const menuNames = document.getElementById('menuNames');
+  const fingersMode = document.getElementById('fingersMode');
+  const namesMode = document.getElementById('namesMode');
+  const resultNames = document.getElementById('resultNames');
+  const resultFingers = document.getElementById('resultFingers');
+  const pickNameBtn = document.getElementById('pickNameBtn');
+  const pickFingerBtn = document.getElementById('pickFingerBtn');
+  const areaTouch = document.getElementById('areaTouch');
 
-      document.getElementById("risultato").innerText = `👉 Scelto: ${nomi[index]}`;
+  // Active mode tracker
+  let activeMode = 'fingers';
+
+  // For touch tracking in Fingers mode
+  const activeTouches = new Map();
+
+  // Toggle modes
+  function setActiveMode(mode) {
+    activeMode = mode;
+    if (mode === 'fingers') {
+      fingersMode.style.display = 'block';
+      namesMode.style.display = 'none';
+      menuFingers.classList.add('active');
+      menuNames.classList.remove('active');
+      resultNames.textContent = '';
+      resultFingers.textContent = '';
+    } else {
+      fingersMode.style.display = 'none';
+      namesMode.style.display = 'block';
+      menuFingers.classList.remove('active');
+      menuNames.classList.add('active');
+      resultNames.textContent = '';
+      resultFingers.textContent = '';
+      activeTouches.clear();
+      clearTouchDots();
     }
-  </script>
+  }
+
+  menuFingers.addEventListener('click', () => setActiveMode('fingers'));
+  menuNames.addEventListener('click', () => setActiveMode('names'));
+
+  // Fingers mode touch events
+  areaTouch.addEventListener('touchstart', (e) => {
+    for (const touch of e.changedTouches) {
+      const dot = document.createElement('div');
+      dot.classList.add('dot');
+      dot.style.left = (touch.pageX - 20) + 'px';
+      dot.style.top = (touch.pageY - 20) + 'px';
+      document.body.appendChild(dot);
+      activeTouches.set(touch.identifier, {x: touch.pageX, y: touch.pageY, element: dot});
+    }
+    updateFingersCount();
+    e.preventDefault();
+  }, {passive:false});
+
+  areaTouch.addEventListener('touchmove', (e) => {
+    for (const touch of e.changedTouches) {
+      const data = activeTouches.get(touch.identifier);
+      if (data) {
+        data.x = touch.pageX;
+        data.y = touch.pageY;
+        data.element.style.left = (touch.pageX - 20) + 'px';
+        data.element.style.top = (touch.pageY - 20) + 'px';
+      }
+    }
+    e.preventDefault();
+  }, {passive:false});
+
+  areaTouch.addEventListener('touchend', (e) => {
+    for (const touch of e.changedTouches) {
+      const data = activeTouches.get(touch.identifier);
+      if (data) {
+        document.body.removeChild(data.element);
+        activeTouches.delete(touch.identifier);
+      }
+    }
+    updateFingersCount();
+    e.preventDefault();
+  }, {passive:false});
+
+  areaTouch.addEventListener('touchcancel', (e) => {
+    for (const touch of e.changedTouches) {
+      const data = activeTouches.get(touch.identifier);
+      if (data) {
+        document.body.removeChild(data.element);
+        activeTouches.delete(touch.identifier);
+      }
+    }
+    updateFingersCount();
+    e.preventDefault();
+  }, {passive:false});
+
+  function updateFingersCount() {
+    resultFingers.textContent = `Dita poggiate: ${activeTouches.size}`;
+  }
+
+  function clearTouchDots() {
+    activeTouches.forEach(({element}) => {
+      if (element.parentNode) element.parentNode.removeChild(element);
+    });
+    activeTouches.clear();
+  }
+
+  // Fingers mode: pick a random finger
+  pickFingerBtn.addEventListener('click', () => {
+    if (activeTouches.size === 0) {
+      resultFingers.textContent = 'Nessun dito poggiato!';
+      return;
+    }
+    const touchesArray = Array.from(activeTouches.keys());
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    const idx = array[0] % touchesArray.length;
+    const chosenId = touchesArray[idx];
+    const pos = activeTouches.get(chosenId);
+    resultFingers.textContent = `Dito scelto: ID ${chosenId + 1} (X:${pos.x.toFixed(0)}, Y:${pos.y.toFixed(0)})`;
+  });
+
+  // Names mode: pick a random name
+  pickNameBtn.addEventListener('click', () => {
+    const input = document.getElementById('namesInput').value;
+    const nomi = input.split(',').map(n => n.trim()).filter(n => n.length > 0);
+    if (nomi.length < 2) {
+      resultNames.textContent = 'Inserisci almeno 2 nomi.';
+      return;
+    }
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    const index = array[0] % nomi.length;
+    resultNames.textContent = `👉 Scelto: ${nomi[index]}`;
+  });
+
+  // Set default mode to fingers on load
+  setActiveMode('fingers');
+</script>
 </body>
 </html>
