@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Scelta Casuale Vera</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+      background-color: #f9f9f9;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+    }
+    #risultato {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 30px;
+      color: #2a7;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scelta Casuale Vera</h1>
+  <p>Inserisci i nomi separati da virgole:</p>
+  <input type="text" id="nomi" placeholder="Esempio: Goku,Baddie" size="30">
+  <br>
+  <button onclick="scegliCaso()">Scegli!</button>
+
+  <div id="risultato"></div>
+
+  <script>
+    function scegliCaso() {
+      const input = document.getElementById("nomi").value;
+      const nomi = input.split(",").map(n => n.trim()).filter(n => n.length > 0);
+
+      if (nomi.length < 2) {
+        document.getElementById("risultato").innerText = "Inserisci almeno 2 nomi.";
+        return;
+      }
+
+      // Generatore casuale sicuro
+      const array = new Uint32Array(1);
+      window.crypto.getRandomValues(array);
+      const index = array[0] % nomi.length;
+
+      document.getElementById("risultato").innerText = `👉 Scelto: ${nomi[index]}`;
+    }
+  </script>
+</body>
+</html>
