@@ -10,12 +10,6 @@
       margin: 0;
       overflow: hidden;
     }
-    /*#areaTouch {
-      width: 100vw;
-      height: calc(100vh - 80px);
-      background: #f0f0f0;
-      position: relative;
-    }*/
     #areaTouch {
       width: 100vw;
       height: 70vh; /* meno alto per lasciare spazio */
@@ -141,11 +135,13 @@
     if (mode === 'fingers') {
       fingersArea.style.display = 'block';
       namesArea.style.display = 'none';
+      areaTouch.style.display = 'block';  // <-- mostra areaTouch
       modeFingers.classList.add('active');
       modeNames.classList.remove('active');
     } else {
       fingersArea.style.display = 'none';
       namesArea.style.display = 'block';
+      areaTouch.style.display = 'none';   // <-- nascondi areaTouch
       modeFingers.classList.remove('active');
       modeNames.classList.add('active');
     }
