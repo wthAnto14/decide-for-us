@@ -315,6 +315,11 @@
         data.element.style.opacity = '1';
         data.element.style.animation = 'none';
         data.element.style.transform = 'translate(-50%, -50%) scale(1.2)';
+
+        // ✅ Vibrazione solo per il vincitore
+        if (navigator.vibrate) {
+          navigator.vibrate(200); // vibra per 200ms
+        }
       }
     });
 
