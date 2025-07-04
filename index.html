@@ -12,7 +12,7 @@
       color: white;
       overflow: hidden;
       user-select: none;
-      -webkit-user-select: none;
+      -webkit-user-select: none; /* Per compatibilità Safari */
     }
 
     #header {
@@ -21,8 +21,13 @@
       font-weight: 900;
       padding: 20px 0 10px 0;
       background: linear-gradient(90deg,
-        #FF0000, #FF7F00, #FFFF00, #00FF00,
-        #0000FF, #4B0082, #8B00FF);
+        #FF0000,
+        #FF7F00,
+        #FFFF00,
+        #00FF00,
+        #0000FF,
+        #4B0082,
+        #8B00FF);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -38,7 +43,26 @@
       position: relative;
       border-radius: 10px;
       box-shadow: 0 0 15px 3px rgba(255 255 255 / 0.1);
-      touch-action: none;
+      touch-action: none; /* Fondamentale per gestire i touch events */
+    }
+
+    /* Messaggio warning al centro */
+    #touchWarning {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(200, 200, 200, 0.5);
+      font-size: 1.4rem;
+      font-weight: 600;
+      pointer-events: none; /* non blocca i tocchi */
+      user-select: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 10;
+    }
+    #touchWarning.visible {
+      opacity: 1;
     }
 
     .dot {
@@ -55,7 +79,6 @@
       cursor: default;
       transform: translate(-50%, -50%);
     }
-
     .dot.red    { background: #FF0000; box-shadow: 0 0 15px #FF0000; }
     .dot.orange { background: #FF7F00; box-shadow: 0 0 15px #FF7F00; }
     .dot.yellow { background: #FFFF00; box-shadow: 0 0 15px #FFFF00; }
@@ -65,8 +88,12 @@
     .dot.purple { background: #8B00FF; box-shadow: 0 0 15px #8B00FF; }
 
     @keyframes glowPulse {
-      from { box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3); }
-      to   { box-shadow: 0 0 25px 8px rgba(255 255 255 / 0.7); }
+      from {
+        box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
+      }
+      to {
+        box-shadow: 0 0 25px 8px rgba(255 255 255 / 0.7);
+      }
     }
 
     .dot svg {
@@ -177,6 +204,7 @@
 </div>
 
 <script>
+  // --- ELEMENTI DEL DOM ---
   const areaTouch = document.getElementById('areaTouch');
   const resultFingers = document.getElementById('resultFingers');
   const countdownEl = document.getElementById('countdown');
@@ -188,12 +216,14 @@
   const namesArea = document.getElementById('namesArea');
   const namesInput = document.getElementById('namesInput');
 
+  // --- COSTANTI DI CONFIGURAZIONE ---
   const SELECTION_TIME_MS = 3000;
   const DOT_SIZE = 70;
   const CIRCLE_RADIUS = 26.25;
   const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
   const COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'purple'];
 
+  // --- STATO DELL'APPLICAZIONE ---
   let activeTouches = new Map();
   let selectionTimer = null;
   let countdownInterval = null;
@@ -202,13 +232,30 @@
   let previousTouchCount = 0;
   let winnerTouchId = null;
 
+  // --- ELEMENTO PER WARNING LIMITE TOCCHI ---
+  const touchWarning = document.createElement('div');
+  touchWarning.id = 'touchWarning';
+  areaTouch.appendChild(touchWarning);
+
+  const maxTouchPoints = navigator.maxTouchPoints || 5;
+
+  function showTouchWarning(msg) {
+    touchWarning.textContent = msg;
+    touchWarning.classList.add('visible');
+  }
+
+  // Mostra messaggio limite dita all’avvio, sparisce dopo 10 sec
+  showTouchWarning(`Il tuo dispositivo supporta al massimo ${maxTouchPoints} dita.`);
+  setTimeout(() => {
+    touchWarning.classList.remove('visible');
+  }, 10000);
+
   function setActiveMode(mode) {
     activeMode = mode;
     if (mode === 'fingers') {
       fingersArea.style.display = 'block';
       namesArea.style.display = 'none';
       areaTouch.style.display = 'block';
-      areaTouch.style.backgroundColor = '#111';
       modeFingers.classList.add('active');
       modeNames.classList.remove('active');
       resetFingersGame();
@@ -233,15 +280,19 @@
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const bg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     const fg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+
+    bg.classList.add('bg');
+    fg.classList.add('fg');
+
     [bg, fg].forEach(c => {
       c.setAttribute("cx", "40");
       c.setAttribute("cy", "40");
       c.setAttribute("r", CIRCLE_RADIUS);
     });
-    fg.classList.add('fg');
-    bg.classList.add('bg');
+
     fg.style.strokeDasharray = CIRCLE_CIRCUMFERENCE;
     fg.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+
     svg.appendChild(bg);
     svg.appendChild(fg);
     return svg;
@@ -250,6 +301,7 @@
   function startProgressAnimation() {
     const duration = SELECTION_TIME_MS;
     const start = performance.now();
+
     activeTouches.forEach(({ progressCircle }) => {
       if (progressCircle) {
         const circle = progressCircle.querySelector('.fg');
@@ -263,7 +315,9 @@
       const elapsed = timestamp - start;
       const progress = Math.min(elapsed / duration, 1);
       circle.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - progress);
-      if (elapsed < duration) requestAnimationFrame(step);
+      if (elapsed < duration) {
+        requestAnimationFrame(step);
+      }
     }
     requestAnimationFrame(step);
   }
@@ -293,6 +347,8 @@
     selectionDone = false;
     previousTouchCount = 0;
     winnerTouchId = null;
+
+    // Ripristina sfondo scuro e toglie warning (se c’è)
     areaTouch.style.backgroundColor = '#111';
   }
 
@@ -315,10 +371,8 @@
         data.element.style.opacity = '1';
         data.element.style.animation = 'none';
         data.element.style.transform = 'translate(-50%, -50%) scale(1.2)';
-
-        // ✅ Vibrazione solo per il vincitore
         if (navigator.vibrate) {
-          navigator.vibrate(200); // vibra per 200ms
+          navigator.vibrate(200);
         }
       }
     });
@@ -327,10 +381,14 @@
   }
 
   function startSelectionProcess() {
-    if (selectionTimer || activeTouches.size < 2) return;
+    if (selectionTimer || activeTouches.size < 2) {
+      return;
+    }
+
     resultFingers.textContent = `Dita poggiate: ${activeTouches.size}. Scelta tra ${SELECTION_TIME_MS / 1000} secondi...`;
     let secondsLeft = SELECTION_TIME_MS / 1000;
     countdownEl.textContent = `Tempo rimasto: ${secondsLeft} s`;
+
     startProgressAnimation();
 
     countdownInterval = setInterval(() => {
@@ -348,19 +406,33 @@
   function handleTouchStart(e) {
     if (activeMode !== 'fingers') return;
     e.preventDefault();
-    if (selectionDone) resetFingersGame();
+
+    if (selectionDone) {
+      resetFingersGame();
+    }
+
     const rect = areaTouch.getBoundingClientRect();
 
     for (const touch of e.changedTouches) {
+      if (activeTouches.size >= maxTouchPoints) {
+        showTouchWarning(`Il tuo dispositivo supporta al massimo ${maxTouchPoints} dita.`);
+        break;
+      }
+
       const dot = document.createElement('div');
       dot.classList.add('dot');
-      dot.classList.add(COLORS[activeTouches.size % COLORS.length]);
+      const colorClass = COLORS[activeTouches.size % COLORS.length];
+      dot.classList.add(colorClass);
+
       const x = touch.clientX - rect.left;
       const y = touch.clientY - rect.top;
+
       dot.style.left = `${x}px`;
       dot.style.top = `${y}px`;
+
       const progressCircle = createProgressCircle();
       dot.appendChild(progressCircle);
+
       areaTouch.appendChild(dot);
       activeTouches.set(touch.identifier, { element: dot, progressCircle });
     }
@@ -371,56 +443,58 @@
   function handleTouchEnd(e) {
     if (activeMode !== 'fingers') return;
     e.preventDefault();
+
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
       if (data) {
         areaTouch.removeChild(data.element);
         activeTouches.delete(touch.identifier);
       }
-
-      // Se il vincitore ha sollevato il dito, reset
-      if (selectionDone && touch.identifier === winnerTouchId) {
-        setTimeout(() => {
-          areaTouch.style.backgroundColor = '#111';
-          resetFingersGame();
-        }, 100);
-      }
     }
 
-    if (selectionDone) return;
+    if (selectionDone) {
+      resetFingersGame();
+      return;
+    }
+
     updateTouchState();
   }
 
   function handleTouchMove(e) {
-    if (activeMode !== 'fingers' || (selectionDone && winnerTouchId === null)) return;
+    if (activeMode !== 'fingers' || selectionDone) return;
     e.preventDefault();
+
     const rect = areaTouch.getBoundingClientRect();
 
     for (const touch of e.changedTouches) {
       const data = activeTouches.get(touch.identifier);
-      if (!data) continue;
-      if (selectionDone && touch.identifier !== winnerTouchId) continue;
-      let x = touch.clientX - rect.left;
-      let y = touch.clientY - rect.top;
-      const r = DOT_SIZE / 2;
-      x = Math.max(r, Math.min(x, rect.width - r));
-      y = Math.max(r, Math.min(y, rect.height - r));
-      data.element.style.left = `${x}px`;
-      data.element.style.top = `${y}px`;
+      if (data) {
+        let x = touch.clientX - rect.left;
+        let y = touch.clientY - rect.top;
+
+        const radius = DOT_SIZE / 2;
+        x = Math.max(radius, Math.min(x, rect.width - radius));
+        y = Math.max(radius, Math.min(y, rect.height - radius));
+
+        data.element.style.left = `${x}px`;
+        data.element.style.top = `${y}px`;
+      }
     }
   }
 
   function updateTouchState() {
-    const current = activeTouches.size;
-    if (previousTouchCount !== current && !selectionDone) {
+    const currentTouchCount = activeTouches.size;
+
+    if (previousTouchCount !== currentTouchCount && !selectionDone) {
       clearTimer();
-      if (current >= 2) startSelectionProcess();
-      else {
+      if (currentTouchCount >= 2) {
+        startSelectionProcess();
+      } else {
         resultFingers.textContent = 'Appoggia almeno 2 dita per iniziare la scelta.';
         countdownEl.textContent = '';
       }
     }
-    previousTouchCount = current;
+    previousTouchCount = currentTouchCount;
   }
 
   function pickName() {
@@ -430,24 +504,30 @@
       resultNames.textContent = 'Inserisci almeno un nome.';
       return;
     }
-    const names = input.split(',').map(n => n.trim()).filter(n => n);
+    const names = input.split(',').map(n => n.trim()).filter(n => n.length > 0);
     if (names.length === 0) {
       resultNames.textContent = 'Inserisci almeno un nome valido.';
       return;
     }
     const array = new Uint32Array(1);
     window.crypto.getRandomValues(array);
-    resultNames.textContent = `Nome scelto: ${names[array[0] % names.length]}`;
+    const idx = array[0] % names.length;
+    resultNames.textContent = `Nome scelto: ${names[idx]}`;
   }
 
+  // --- EVENT LISTENERS ---
   areaTouch.addEventListener('touchstart', handleTouchStart, { passive: false });
   areaTouch.addEventListener('touchend', handleTouchEnd, { passive: false });
   areaTouch.addEventListener('touchcancel', handleTouchEnd, { passive: false });
   areaTouch.addEventListener('touchmove', handleTouchMove, { passive: false });
+
   pickNameBtn.addEventListener('click', pickName);
   modeFingers.addEventListener('click', () => setActiveMode('fingers'));
   modeNames.addEventListener('click', () => setActiveMode('names'));
+
+  // --- INIZIALIZZAZIONE ---
   setActiveMode('fingers');
+
 </script>
 
 </body>
