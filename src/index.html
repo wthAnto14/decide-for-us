@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <title>Decide for Us</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <div id="header">Decide For Us</div>
@@ -13,6 +14,7 @@
             <div id="countdown"></div>
         </div>
         <div id="namesArea" style="display: none;">
+            <label for="namesInput" style="display: none">Inserisci nomi:</label>
             <input type="text" id="namesInput" placeholder="Inserisci nomi separati da virgola" />
             <button id="pickNameBtn">Scegli un nome</button>
             <div id="resultNames"></div>
@@ -21,5 +23,6 @@
             <div id="modeFingers" class="active">☝️ Fingers</div>
             <div id="modeNames">🔠 Names</div>
         </div>
+        <script src="script.js"></script>
     </body>
 </html>
