@@ -342,6 +342,10 @@ areaTouch.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 areaTouch.addEventListener('touchmove', handleTouchMove, { passive: false });
 
 pickNameBtn.addEventListener('click', pickName);
+namesInput.addEventListener('keydown', function(event) {
+    if(event.key === 'Enter')
+        pickName();
+});
 modeFingers.addEventListener('click', () => setActiveMode('fingers'));
 modeNames.addEventListener('click', () => setActiveMode('names'));
 
