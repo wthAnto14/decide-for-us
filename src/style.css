@@ -1,0 +1,178 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #000;
+    color: white;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none; /* Per compatibilità Safari */
+}
+
+#header {
+    text-align: center;
+    font-size: 2.8rem;
+    font-weight: 900;
+    padding: 20px 0 10px 0;
+    background: linear-gradient(90deg,
+    #FF0000,
+    #FF7F00,
+    #FFFF00,
+    #00FF00,
+    #0000FF,
+    #4B0082,
+    #8B00FF);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 2px;
+}
+
+#areaTouch {
+    width: 100vw;
+    height: 65vh;
+    max-height: 500px;
+    margin: 0 auto;
+    background: #111;
+    position: relative;
+    border-radius: 10px;
+    box-shadow: 0 0 15px 3px rgba(255 255 255 / 0.1);
+    touch-action: none; /* Fondamentale per gestire i touch events */
+    transition: background-color 0.5s ease;
+}
+
+.dot {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
+    transition: opacity 0.4s ease, transform 0.3s ease;
+    animation: glowPulse 2.5s infinite alternate;
+    cursor: default;
+    transform: translate(-50%, -50%);
+}
+.dot.red    { background: #FF0000; box-shadow: 0 0 15px #FF0000; }
+.dot.orange { background: #FF7F00; box-shadow: 0 0 15px #FF7F00; }
+.dot.yellow { background: #FFFF00; box-shadow: 0 0 15px #FFFF00; }
+.dot.green  { background: #00FF00; box-shadow: 0 0 15px #00FF00; }
+.dot.blue   { background: #0000FF; box-shadow: 0 0 15px #0000FF; }
+.dot.indigo { background: #4B0082; box-shadow: 0 0 15px #4B0082; }
+.dot.purple { background: #8B00FF; box-shadow: 0 0 15px #8B00FF; }
+
+@keyframes glowPulse {
+    from {
+        box-shadow: 0 0 12px 4px rgba(255 255 255 / 0.3);
+    }
+    to {
+        box-shadow: 0 0 25px 8px rgba(255 255 255 / 0.7);
+    }
+}
+
+.dot svg {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    transform: rotate(-90deg);
+}
+
+.dot svg circle.bg {
+    stroke: #444;
+    stroke-width: 6;
+    fill: transparent;
+}
+
+.dot svg circle.fg {
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke: white;
+    fill: transparent;
+}
+
+#menu {
+    height: 70px;
+    background: #222;
+    color: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+#menu div {
+    cursor: pointer;
+    padding: 12px 20px;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+}
+
+#menu .active {
+    background-color: #555;
+}
+
+#namesInput, #pickNameBtn {
+    margin: 10px;
+    padding: 12px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    box-shadow: 0 0 10px rgba(255 255 255 / 0.2);
+}
+
+#namesInput {
+    width: 70%;
+    max-width: 400px;
+    color: #000;
+}
+
+#pickNameBtn {
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+}
+
+#pickNameBtn:hover {
+    background-color: #666;
+}
+
+#fingersArea, #namesArea {
+    padding: 15px;
+    background: #111;
+    border-radius: 8px;
+    margin: 15px auto;
+    max-width: 600px;
+    text-align: center;
+}
+
+#countdown {
+    font-size: 20px;
+    margin-top: 10px;
+    font-weight: 600;
+    color: white;
+}
+
+#resultFingers {
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+}
+
+#resultNames {
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-top: 12px;
+    color: white;
+}
+
+#namesInput.error {
+    border: 2px solid red;
+    outline: none;
+}
+
+#resultNames.error {
+    color: #f33;
+}
