@@ -313,7 +313,7 @@ function pickName() {
     }
 
     if (duplicates.size > 0) {
-        resultNames.textContent = 'I nomi devono essere tutti diversi (case-sensitive).';
+        resultNames.textContent = 'I nomi devono essere tutti diversi.';
         resultNames.classList.add('error');
         namesInput.classList.add('error');
         return;
